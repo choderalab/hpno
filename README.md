@@ -1,8 +1,8 @@
 hpnotiq
 ==============================
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/hpnotiq/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/hpnotiq/actions?query=branch%3Amaster+workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/hpnotiq/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/hpnotiq/branch/master)
+[![GitHub Actions Build Status](https://github.com/choderalab/hpnotiq/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/hpnotiq/actions?query=branch%3Amaster+workflow%3ACI)
+
 
 
 Hierarchical Passing of Node Tensors
