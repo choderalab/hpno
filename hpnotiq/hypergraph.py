@@ -125,16 +125,18 @@ def from_homograph(g, max_size=4):
     # 'has' and 'in' relationships.
     # TODO:
     # we'll test later to see if this adds too much overhead
-    for small_idx in range(1, max_size+1):
-        for big_idx in range(small_idx + 1, max_size+1):
-            for pos_idx in range(big_idx - small_idx + 1):
-                hg[
+    for small_idx in range(1, max_size+1): # child
+        for big_idx in range(small_idx + 1, max_size+1): # parent
+            for pos_idx in range(big_idx - small_idx + 1): # position
+
+                # `in` relationship
+                hg[ # (source, relationship, destination)
                     (
                         "n%s" % small_idx,
                         "n%s_as_%s_in_n%s" % (small_idx, pos_idx, big_idx),
                         "n%s" % big_idx,
                     )
-                ] = np.stack(
+                ] = np.stack( # use `np.array` here but convert to list later
                     [
                         np.array(
                             [
@@ -149,6 +151,7 @@ def from_homograph(g, max_size=4):
                     axis=1,
                 )
 
+                # define the same for `has` relationship
                 hg[
                     (
                         "n%s" % big_idx,
@@ -170,10 +173,13 @@ def from_homograph(g, max_size=4):
                     axis=1,
                 )
 
+    # convert all to python `List`
     hg = dgl.heterograph({key: list(value) for key, value in hg.items()})
 
     # include indices in the nodes themselves
     for term in ["n%s" % level for level in range(1, max_size+1)]:
         hg.nodes[term].data["idxs"] = torch.tensor(idxs[term])
 
+    # NOTE: only relationships are handled here, not data
+    # assignment is needed if data is in homograph
     return hg
