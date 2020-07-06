@@ -10,7 +10,7 @@ import dgl
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
-def get_indices_from_adjacency_matrix(a, max_size=4):
+def get_indices_from_adjacency_matrix(a, max_level=4):
     """ Read the relationship indices from adjacency matrix.
 
     Parameters
@@ -18,7 +18,7 @@ def get_indices_from_adjacency_matrix(a, max_size=4):
     a : `torch.SparseTensor`
         Input adjacency matrix.
 
-    max_size : `int`
+    max_level : `int`
         Highest level of hypernodes.
 
     Returns
@@ -28,15 +28,15 @@ def get_indices_from_adjacency_matrix(a, max_size=4):
 
     """
     # check input signature
-    assert isinstance(max_size, int)
-    assert max_size >= 2
+    assert isinstance(max_level, int)
+    assert max_level >= 2
     assert isinstance(a, torch.Tensor) or isinstance(a, torch.SparseTensor)
 
     # initialize output
     idxs = {}
 
     # loop through the levels
-    for level in range(3, max_size + 1):
+    for level in range(3, max_level + 1):
 
         # get the indices that is the basis of the level
         base_idxs = idxs["n%s" % (level - 1)]
@@ -79,7 +79,7 @@ def get_indices_from_adjacency_matrix(a, max_size=4):
 # =============================================================================
 # MODULE FUNCTIONS
 # =============================================================================
-def from_homograph(g, max_size=4):
+def from_homograph(g, max_level=4):
     """ Constructing hypergraph from homograph.
 
     Parameters
@@ -87,7 +87,7 @@ def from_homograph(g, max_size=4):
     g : `dgl.DGLGraph`
         Input graph.
 
-    max_size : `int`
+    max_level : `int`
         (Default value = 4)
         Highest level of hypernodes.
 
@@ -114,7 +114,7 @@ def from_homograph(g, max_size=4):
 
     # build a mapping between indices and the ordering
     idxs_to_ordering = {}
-    for term in ["n%s" % level for level in range(2, max_size)]:
+    for term in ["n%s" % level for level in range(2, max_level)]:
         idxs_to_ordering[term] = {
             tuple(subgraph_idxs): ordering
             for (ordering, subgraph_idxs) in enumerate(list(idxs[term]))
@@ -125,8 +125,8 @@ def from_homograph(g, max_size=4):
     # 'has' and 'in' relationships.
     # TODO:
     # we'll test later to see if this adds too much overhead
-    for small_idx in range(1, max_size+1): # child
-        for big_idx in range(small_idx + 1, max_size+1): # parent
+    for small_idx in range(1, max_level+1): # child
+        for big_idx in range(small_idx + 1, max_level+1): # parent
             for pos_idx in range(big_idx - small_idx + 1): # position
 
                 # `in` relationship
@@ -177,7 +177,7 @@ def from_homograph(g, max_size=4):
     hg = dgl.heterograph({key: list(value) for key, value in hg.items()})
 
     # include indices in the nodes themselves
-    for term in ["n%s" % level for level in range(1, max_size+1)]:
+    for term in ["n%s" % level for level in range(1, max_level+1)]:
         hg.nodes[term].data["idxs"] = torch.tensor(idxs[term])
 
     # NOTE: only relationships are handled here, not data
