@@ -4,7 +4,6 @@ Hierarchical Passing of Node Tensors
 """
 
 # Add imports here
-from .hpnotiq import *
 
 # Handle versioneer
 from ._version import get_versions
