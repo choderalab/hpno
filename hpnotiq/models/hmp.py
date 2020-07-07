@@ -7,7 +7,6 @@ import numpy as np
 import torch
 import dgl
 
-
 # =============================================================================
 # MODULE CLASSES
 # =============================================================================
@@ -20,8 +19,6 @@ class HierarchicalMessagePassing(torch.nn.Module):
         (Default value = 32)
         Units in hidden layer.
 
-
-
     Attributes
     ----------
     d_up_ : `torch.nn.Linear`
@@ -30,8 +27,6 @@ class HierarchicalMessagePassing(torch.nn.Module):
     d_down_ : `torch.nn.Linear`
         Downsteam message passing.
 
-
-
     """
     def __init__(self, units=32, activation='Tanh', max_level=4):
         super(HierarchicalMessagePassing, self).__init__()
@@ -39,7 +34,7 @@ class HierarchicalMessagePassing(torch.nn.Module):
         # bookkeeping
         self.units = units
         self.max_level = max_level
-        self.activation = activation()
+        self.activation = activation
 
         # up
         for idx in range(2, max_level+1): # hard-code 2 for neighbor
@@ -87,7 +82,6 @@ class HierarchicalMessagePassing(torch.nn.Module):
             Output graph.
 
         """
-
         # up
         for idx in range(2, self.max_level+1):
             g.multi_update_all(
@@ -97,7 +91,7 @@ class HierarchicalMessagePassing(torch.nn.Module):
                         # msg_func
                         dgl.function.copy_src(
                             src='h',
-                            out='m%s' % pos_idx
+                            out='m%s' % pos_idx,
                         ),
 
                         # reduce_func
@@ -133,7 +127,7 @@ class HierarchicalMessagePassing(torch.nn.Module):
             g.multi_update_all(
                 etype_dict={
                     'n%s_has_%s_n%s' % (idx, pos_idx, idx-1): (
-                        dgl.function.copy(src='h', out='m'),
+                        dgl.function.copy_src(src='h', out='m'),
                         dgl.function.sum(msg='m', out='h_down')
                     ) for pos_idx in range(2)
                 },
@@ -144,12 +138,15 @@ class HierarchicalMessagePassing(torch.nn.Module):
                 func=lambda nodes: {
                     'h': getattr(self, 'd_down_%s' % (idx-1))(
                         torch.cat(
-                            [nodes.data['h']] + [nodes.data['h_down']]
-                            for pos_idx in range(2)
+                            [
+                                nodes.data['h'],
+                                nodes.data['h_down']
+                            ],
+                            dim=-1,
                         )
                     )
                 },
-                cross_reducer='sum'
+                ntype='n%s' % (idx-1),
             )
 
         return g

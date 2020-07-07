@@ -35,6 +35,9 @@ def get_indices_from_adjacency_matrix(a, max_level=4):
     # initialize output
     idxs = {}
 
+    # get `n2` directly from adjacency matrix
+    idxs['n2'] = a._indices().t().detach()
+
     # loop through the levels
     for level in range(3, max_level + 1):
 
@@ -112,9 +115,15 @@ def from_homograph(g, max_level=4):
     # get indices
     idxs = get_indices_from_adjacency_matrix(a)
 
+    # make them all numpy
+    idxs = {key: value.numpy() for key, value in idxs.items()}
+
+    # also include n1
+    idxs["n1"] = np.arange(g.number_of_nodes())[:, None]
+
     # build a mapping between indices and the ordering
     idxs_to_ordering = {}
-    for term in ["n%s" % level for level in range(2, max_level)]:
+    for term in ["n%s" % level for level in range(1, max_level)]:
         idxs_to_ordering[term] = {
             tuple(subgraph_idxs): ordering
             for (ordering, subgraph_idxs) in enumerate(list(idxs[term]))
@@ -180,6 +189,7 @@ def from_homograph(g, max_level=4):
     for term in ["n%s" % level for level in range(1, max_level+1)]:
         hg.nodes[term].data["idxs"] = torch.tensor(idxs[term])
 
-    # NOTE: only relationships are handled here, not data
-    # assignment is needed if data is in homograph
+    for key in g.ndata.keys():
+        hg.nodes['n1'].data[key] = g.ndata[key]
+
     return hg

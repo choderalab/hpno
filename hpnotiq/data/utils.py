@@ -1,7 +1,7 @@
 # =============================================================================
 # IMPORTS
 # =============================================================================
-import pinot
+import hpnotiq as hq
 import pandas as pd
 import numpy as np
 import torch
@@ -29,7 +29,7 @@ def from_csv(
     Parameters
     ----------
     path :
-        
+
     toolkit :
          (Default value = "rdkit")
     smiles_col :
@@ -45,7 +45,7 @@ def from_csv(
     shuffle :
          (Default value = True)
     **kwargs :
-        
+
 
     Returns
     -------
@@ -76,7 +76,7 @@ def from_csv(
             df_smiles = [df_smiles[idx] for idx in idxs]
 
             mols = [Chem.MolFromSmiles(smiles) for smiles in df_smiles]
-            gs = [pinot.graph.from_rdkit_mol(mol) for mol in mols]
+            gs = [hq.graph.from_rdkit_mol(mol) for mol in mols]
 
         elif toolkit == "openeye":
             raise NotImplementedError
@@ -107,7 +107,7 @@ def load_unlabeled_data(path, size=0.1, toolkit="rdkit", seed=2666):
     Parameters
     ----------
     path :
-        
+
     size :
          (Default value = 0.1)
     toolkit :
@@ -138,7 +138,7 @@ def load_unlabeled_data(path, size=0.1, toolkit="rdkit", seed=2666):
             from rdkit import Chem
 
             mols = [Chem.MolFromSmiles(smiles) for smiles in df_smiles]
-            gs = [pinot.graph.from_rdkit_mol(mol) for mol in mols]
+            gs = [hq.graph.from_rdkit_mol(mol) for mol in mols]
 
         elif toolkit == "openeye":
             from openeye import oechem
@@ -147,7 +147,7 @@ def load_unlabeled_data(path, size=0.1, toolkit="rdkit", seed=2666):
                 oechem.OESmilesToMol(oechem.OEGraphMol(), smiles)
                 for smiles in df_smiles
             ]
-            gs = [pinot.graph.from_oemol(mol) for mol in mols]
+            gs = [hq.graph.from_oemol(mol) for mol in mols]
 
         gs = list(zip(gs, df_y))
 
@@ -162,7 +162,7 @@ def normalize(ds):
     Parameters
     ----------
     ds :
-        
+
 
     Returns
     -------
@@ -179,7 +179,7 @@ def normalize(ds):
         Parameters
         ----------
         y :
-            
+
 
         Returns
         -------
@@ -193,7 +193,7 @@ def normalize(ds):
         Parameters
         ----------
         y :
-            
+
 
         Returns
         -------
@@ -210,9 +210,9 @@ def split(ds, partition):
     Parameters
     ----------
     ds :
-        
+
     partition :
-        
+
 
     Returns
     -------
@@ -238,9 +238,9 @@ def batch(ds, batch_size, seed=2666, shuffle=False):
     Parameters
     ----------
     ds :
-        
+
     batch_size :
-        
+
     seed :
          (Default value = 2666)
     shuffle :
@@ -271,73 +271,3 @@ def batch(ds, batch_size, seed=2666, shuffle=False):
     ]
 
     return list(zip(gs_batched, ys_batched))
-
-
-def prepare_semi_supervised_data(unlabelled_data, labelled_data, seed=2666):
-    """Create a semi-supervised data by mixing unlabelled and labelled
-    data. An example of labelled data can be readily accessed via
-    `pinot.data.zinc_tiny()`
-
-    Parameters
-    ----------
-    unlabelled_data :
-        
-    labelled_data :
-        
-    seed :
-         (Default value = 2666)
-
-    Returns
-    -------
-
-    """
-    semi_supervised_data = []
-
-    for (g, y) in unlabelled_data:
-        semi_supervised_data.append((g, torch.tensor([np.nan])))
-    for (g, y) in labelled_data:
-        semi_supervised_data.append((g, y))
-
-    # Shuffle the combined data
-    np.random.seed(seed)
-    np.random.shuffle(semi_supervised_data)
-
-    return semi_supervised_data
-
-
-def prepare_semi_supeprvised_data_from_labeled_data(
-    labelled_data, r=0.2, seed=2666
-):
-    """Create semi-supervised data from labelled data by randomly removing the
-    labels for (1-r) of the data points.
-
-    Parameters
-    ----------
-    labelled_data :
-        
-    r :
-         (Default value = 0.2)
-    seed :
-         (Default value = 2666)
-
-    Returns
-    -------
-    semi_data
-        the semi-supervised data with the same number of
-        data points as labelled_data. However, only a fraction r
-        of the points have labels
-    small_labelled_data
-        the fraction r of the points with labels
-
-    """
-    semi_data = []
-    small_labelled_data = []
-
-    np.random.seed(seed)
-    for (g, y) in labelled_data:
-        if np.random.rand() < r:
-            semi_data.append((g, y))
-            small_labelled_data.append((g, y))
-        else:
-            semi_data.append((g, torch.tensor([np.nan])))
-    return semi_data, small_labelled_data
