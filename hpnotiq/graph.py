@@ -11,7 +11,6 @@ import torch
 # UTILITY FUNCTIONS
 # =============================================================================
 
-
 def fp_oe(atom):
     """
 
@@ -203,6 +202,7 @@ def from_rdkit_mol(mol, use_fp=True):
     -------
 
     """
+    from rdkit import Chem
 
     # initialize graph
     g = dgl.DGLGraph()

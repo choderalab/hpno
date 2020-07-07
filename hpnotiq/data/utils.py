@@ -73,10 +73,18 @@ def from_csv(
                 if "nan" not in df_smiles[idx]
             ]
 
+            idxs = [
+                idx
+                for idx in range(len(df_smiles))
+                if len(df_smiles[idx]) > 2
+            ]
+
             df_smiles = [df_smiles[idx] for idx in idxs]
 
             mols = [Chem.MolFromSmiles(smiles) for smiles in df_smiles]
-            gs = [hq.graph.from_rdkit_mol(mol) for mol in mols]
+
+            gs = [hq.heterograph.from_homograph(
+                hq.graph.from_rdkit_mol(mol)) for mol in mols]
 
         elif toolkit == "openeye":
             raise NotImplementedError
@@ -261,7 +269,7 @@ def batch(ds, batch_size, seed=2666, shuffle=False):
     gs, ys = tuple(zip(*ds))
 
     gs_batched = [
-        dgl.batch(gs[idx * batch_size : (idx + 1) * batch_size])
+        dgl.batch_hetero(gs[idx * batch_size : (idx + 1) * batch_size])
         for idx in range(n_batches)
     ]
 

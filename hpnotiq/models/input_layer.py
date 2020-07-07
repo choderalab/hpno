@@ -1,4 +1,4 @@
-""" Input net. """
+""" Input layer. """
 
 # =============================================================================
 # IMPORTS
@@ -50,7 +50,7 @@ class InputLayer(torch.nn.Module):
                 lambda nodes: {
                     'h': torch.zeros(
                         g.number_of_nodes(ntype='n%s' % idx),
-                        self.out_features
+                        self.out_features,
                     )
                 },
                 ntype='n%s' % idx,

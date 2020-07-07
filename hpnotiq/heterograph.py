@@ -182,6 +182,34 @@ def from_homograph(g, max_level=4):
                     axis=1,
                 )
 
+    for term in ['n%s' % idx for idx in range(1, max_level+1)]:
+        hg[
+            (
+                term,
+                "%s_in_g" % term,
+                "g",
+            )] = np.stack(
+                [
+                    np.arange(len(idxs[term])),
+                    np.zeros(len(idxs[term]))
+                ],
+                axis=1,
+            )
+
+        hg[
+            (
+                "g",
+                "g_has_%s" % term,
+                term
+            )] = np.stack(
+                [
+                    np.zeros(len(idxs[term])),
+                    np.arange(len(idxs[term])),
+                ],
+                axis=1,
+            )
+
+
     # convert all to python `List`
     hg = dgl.heterograph({key: list(value) for key, value in hg.items()})
 
