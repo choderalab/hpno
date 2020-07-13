@@ -33,10 +33,6 @@ class Train:
         (Default value = 1)
         Interval states are recorded.
 
-    lr_scheduler: `torch.optim.lr_scheduler`
-        (Default value = None)
-        Learning rate scheduler, will apply after every training epoch
-
     Methods
     -------
     train_once : Train model once.
@@ -211,10 +207,6 @@ class TrainAndTest:
         (Default value = Train)
         Train class to use
 
-    lr_scheduler: `torch.optim.lr_scheduler`
-        (Default value = None)
-        Learning rate scheduler, will apply after every training epoch
-
     Methods
     -------
     run : conduct experiment
@@ -231,7 +223,6 @@ class TrainAndTest:
         n_epochs=100,
         record_interval=1,
         train_cls=Train,
-        lr_scheduler=None,
     ):
         self.net = net  # deepcopy the model object
         self.data_tr = data_tr
@@ -241,7 +232,6 @@ class TrainAndTest:
         self.n_epochs = n_epochs
         self.record_interval = record_interval
         self.train_cls = train_cls
-        self.lr_scheduler = lr_scheduler
 
     def __str__(self):
         _str = ""
@@ -271,7 +261,6 @@ class TrainAndTest:
             data=self.data_tr,
             optimizer=self.optimizer,
             n_epochs=self.n_epochs,
-            lr_scheduler=self.lr_scheduler
         )
 
         train.train()
