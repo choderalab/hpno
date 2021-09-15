@@ -216,6 +216,7 @@ def from_homograph(g, max_level=4):
     # include indices in the nodes themselves
     for term in ["n%s" % level for level in range(1, max_level+1)]:
         hg.nodes[term].data["idxs"] = torch.tensor(idxs[term])
+        hg.nodes[term].
 
     for key in g.ndata.keys():
         hg.nodes['n1'].data[key] = g.ndata[key]
