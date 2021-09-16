@@ -17,9 +17,26 @@ class HierarchicalPathNetwork(torch.nn.Module):
 
     Parameters
     ----------
-    units : `int`
-        (Default value = 32)
-        Units in hidden layer.
+    in_features : int
+        Input features.
+
+    out_features : int
+        Output features.
+
+    hidden_features : int
+        Hidden features.
+
+    max_level : int
+        Maximum level of hierarchical message passing.
+
+    activation : Callable
+        Activation function for layer.
+
+    max_level : int
+        Maximum level of message passing.
+
+    ring : bool
+        If true, include ring information.
 
     Attributes
     ----------
@@ -32,6 +49,8 @@ class HierarchicalPathNetwork(torch.nn.Module):
         out_features: int,
         hidden_features: int,
         depth: int,
+        max_level: int=4,
+        ring: bool=False,
         activation: Callable=torch.nn.SiLU(),
     ):
         super(HierarchicalPathNetwork, self).__init__()
@@ -40,6 +59,8 @@ class HierarchicalPathNetwork(torch.nn.Module):
         self.hidden_features = hidden_features
         self.depth = depth
         self.activation = activation
+        self.max_level = max_level
+        self.ring = ring
 
         for idx in range(depth):
             _in_features = in_features if idx == 0 else hidden_features
@@ -53,6 +74,8 @@ class HierarchicalPathNetwork(torch.nn.Module):
                     out_features=_out_features,
                     hidden_features=hidden_features,
                     activation=_activation,
+                    max_level=max_level,
+                    ring=ring,
                 )
             )
 

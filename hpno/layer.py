@@ -16,9 +16,23 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
 
     Parameters
     ----------
-    units : `int`
-        (Default value = 32)
-        Units in hidden layer.
+    in_features : int
+        Input features.
+
+    out_features : int
+        Output features.
+
+    hidden_features : int
+        Hidden features.
+
+    max_level : int
+        Maximum level of hierarchical message passing.
+
+    activation : Callable
+        Activation function for layer.
+
+    ring : bool
+        If true, include ring information.
 
     Attributes
     ----------
