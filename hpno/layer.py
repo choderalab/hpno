@@ -6,6 +6,7 @@
 import numpy as np
 import torch
 import dgl
+from typing import Union, Callable
 
 # =============================================================================
 # MODULE CLASSES
@@ -30,12 +31,12 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
     """
     def __init__(
             self,
-            in_features,
-            out_features,
-            hidden_features=None,
-            max_level=4,
-            activation=torch.nn.SiLU(),
-            ring=False,
+            in_features: int,
+            out_features: int,
+            hidden_features: Union[int, None]=None,
+            max_level: int=4,
+            activation: Callable=torch.nn.SiLU(),
+            ring: bool=False,
         ):
         super(HierarchicalPathNetworkLayer, self).__init__()
         self.in_features = in_features
