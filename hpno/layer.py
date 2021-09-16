@@ -3,7 +3,6 @@
 # =============================================================================
 # IMPORTS
 # =============================================================================
-import numpy as np
 import torch
 import dgl
 from typing import Union, Callable
@@ -55,14 +54,12 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         super(HierarchicalPathNetworkLayer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.max_level = 4
+        self.max_level = max_level
         self.ring = ring
         self.activation = activation
 
         if hidden_features is None:
             hidden_features = in_features
-
-
 
         # up
         for idx in range(2, max_level+1):
