@@ -14,7 +14,7 @@ def test_forward():
     import torch
     from rdkit import Chem
 
-    g = hq.heterograph.from_homograph(
+    g = hq.heterograph.heterograph(
             hq.graph.from_rdkit_mol(
                 Chem.MolFromSmiles('c1ccccc1')
             )
