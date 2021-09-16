@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# torsion models
+.th
+
+# ogb datasets
+dataset/
