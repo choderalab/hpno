@@ -52,7 +52,6 @@ class GraphReadout(torch.nn.Module):
 
         # hack the layer by removing all the downward steps
         for name, child in self.upward_layer.named_children():
-            print(name, child)
             if "down" in name:
                 setattr(self.upward_layer, name, torch.nn.Identity())
 
@@ -67,8 +66,6 @@ class GraphReadout(torch.nn.Module):
                 out_features,
             )
         )
-
-        print(self)
 
     def forward(self, graph, feat):
         """ Forward pass.

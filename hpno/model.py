@@ -6,8 +6,9 @@
 import numpy as np
 import torch
 import dgl
-from typing import Callable
+from typing import Callable, Union
 from .layer import HierarchicalPathNetworkLayer
+from .readout import GraphReadout
 
 # =============================================================================
 # MODULE CLASSES
@@ -38,6 +39,9 @@ class HierarchicalPathNetwork(torch.nn.Module):
     ring : bool
         If true, include ring information.
 
+    readout : Union[None, Callable]
+        If not None, apply readout.
+
     Attributes
     ----------
     hyno_layer_
@@ -52,6 +56,7 @@ class HierarchicalPathNetwork(torch.nn.Module):
         max_level: int=4,
         ring: bool=False,
         activation: Callable=torch.nn.SiLU(),
+        readout: Union[None, Callable]=None,
     ):
         super(HierarchicalPathNetwork, self).__init__()
         self.in_features = in_features
@@ -61,11 +66,13 @@ class HierarchicalPathNetwork(torch.nn.Module):
         self.activation = activation
         self.max_level = max_level
         self.ring = ring
+        self.readout = readout
 
         for idx in range(depth):
             _in_features = in_features if idx == 0 else hidden_features
             _out_features = out_features if idx == depth-1 else hidden_features
             _activation = torch.nn.Identity() if idx == depth-1 else activation
+
             setattr(
                 self,
                 "hpno_layer_%s" % idx,
@@ -78,6 +85,7 @@ class HierarchicalPathNetwork(torch.nn.Module):
                     ring=ring,
                 )
             )
+
 
     def forward(self, graph, feat):
         """
@@ -100,4 +108,7 @@ class HierarchicalPathNetwork(torch.nn.Module):
         graph = graph.local_var()
         for idx in range(self.depth):
             feat = getattr(self, "hpno_layer_%s" % idx)(graph, feat)
+
+        if self.readout is not None:
+            feat = self.readout(graph, feat)
         return feat
