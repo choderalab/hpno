@@ -44,7 +44,7 @@ class HierarchicalPathNetwork(torch.nn.Module):
         for idx in range(depth):
             _in_features = in_features if idx == 0 else hidden_features
             _out_features = out_features if idx == depth-1 else hidden_features
-            _activation = lambda x: x if idx == depth-1 else activation
+            _activation = torch.nn.Identity() if idx == depth-1 else activation
             setattr(
                 self,
                 "hpno_layer_%s" % idx,
@@ -55,3 +55,26 @@ class HierarchicalPathNetwork(torch.nn.Module):
                     activation=_activation,
                 )
             )
+
+    def forward(self, graph, feat):
+        """
+        Parameters
+        ----------
+        graph : dgl.DGLHeteroGraph
+            Input graph.
+
+        feat : torch.Tensor
+            Input feature.
+
+        Attributes
+        ----------
+        d_up_ : `torch.nn.Linear`
+            Upstream message passing.
+
+        d_down_ : `torch.nn.Linear`
+            Downsteam message passing.
+        """
+        graph = graph.local_var()
+        for idx in range(self.depth):
+            feat = getattr(self, "hpno_layer_%s" % idx)(graph, feat)
+        return feat

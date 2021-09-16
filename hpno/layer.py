@@ -43,16 +43,12 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         self.out_features = out_features
         self.max_level = 4
         self.ring = ring
-
-        if isinstance(activation, str):
-            activation = getattr(torch.nn.functional, activation)
-        elif activation is None:
-            activation = lambda x: x
+        self.activation = activation
 
         if hidden_features is None:
             hidden_features = in_features
 
-        self.activation = activation
+
 
         # up
         for idx in range(2, max_level+1):
