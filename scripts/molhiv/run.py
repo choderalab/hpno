@@ -7,15 +7,14 @@ def run(args):
     from torch.utils.data import DataLoader
 
     dataset = DglGraphPropPredDataset(name="ogbg-molhiv")
-    dataset.graphs = [hpno.heterograph(graph) for graph in dataset.graphs]
-    print(dataset)
+    dataset.graphs = [hpno.heterograph(graph) for graph in dataset.graphs[:30]]
 
     evaluator = Evaluator(name="ogbg-molhiv")
     in_features = 9
     out_features = 1
 
     split_idx = dataset.get_idx_split()
-    train_loader = DataLoader(dataset[split_idx["train"]], batch_size=128, drop_last=True, shuffle=True, collate_fn=collate_dgl)
+    train_loader = DataLoader(dataset[split_idx["train"]], batch_size=4, drop_last=True, shuffle=True, collate_fn=collate_dgl)
     valid_loader = DataLoader(dataset[split_idx["valid"]], batch_size=len(split_idx["valid"]), shuffle=False, collate_fn=collate_dgl)
     test_loader = DataLoader(dataset[split_idx["test"]], batch_size=len(split_idx["test"]), shuffle=False, collate_fn=collate_dgl)
 
@@ -43,7 +42,7 @@ def run(args):
                 g = g.to("cuda:0")
                 y = y.cuda()
             optimizer.zero_grad()
-            y_hat = model.forward(g, g.ndata["feat"])
+            y_hat = model.forward(g, g.nodes['n1'].data["feat"])
             loss = torch.nn.BCELoss()(
                 input=y_hat,
                 target=y,
@@ -57,7 +56,7 @@ def run(args):
             y = y.float()
             if torch.cuda.is_available():
                 g = g.to("cuda:0")
-            y_hat = model.forward(g, g.ndata["feat"])
+            y_hat = model.forward(g, g.nodes['n1'].data["feat"])
             loss = torch.nn.BCELoss()(
                 input=y_hat,
                 target=y,
