@@ -17,12 +17,12 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import hpnotiq
+import hpno
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'hpnotiq'
+project = 'hpno'
 copyright = ("2020, Yuanqing Wang. Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.3")
 author = 'Yuanqing Wang'
@@ -117,7 +117,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'hpnotiqdoc'
+htmlhelp_basename = 'hpnodoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -144,8 +144,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'hpnotiq.tex', 'hpnotiq Documentation',
-     'hpnotiq', 'manual'),
+    (master_doc, 'hpno.tex', 'hpno Documentation',
+     'hpno', 'manual'),
 ]
 
 
@@ -154,7 +154,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'hpnotiq', 'hpnotiq Documentation',
+    (master_doc, 'hpno', 'hpno Documentation',
      [author], 1)
 ]
 
@@ -165,8 +165,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'hpnotiq', 'hpnotiq Documentation',
-     author, 'hpnotiq', 'Hierarchical Passing of Node Tensors',
+    (master_doc, 'hpno', 'hpno Documentation',
+     author, 'hpno', 'Hierarchical Passing of Node Tensors',
      'Miscellaneous'),
 ]
 

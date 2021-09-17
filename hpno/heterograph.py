@@ -82,7 +82,7 @@ def get_indices_from_adjacency_matrix(a, max_level=4):
 # =============================================================================
 # MODULE FUNCTIONS
 # =============================================================================
-def from_homograph(g, max_level=4):
+def heterograph(g, max_level=4):
     """ Constructing hypergraph from homograph.
 
     Parameters
@@ -209,13 +209,16 @@ def from_homograph(g, max_level=4):
                 axis=1,
             )
 
-
     # convert all to python `List`
     hg = dgl.heterograph({key: list(value) for key, value in hg.items()})
 
     # include indices in the nodes themselves
     for term in ["n%s" % level for level in range(1, max_level+1)]:
         hg.nodes[term].data["idxs"] = torch.tensor(idxs[term])
+        hg.nodes[term].data["is_ring"] = torch.eq(
+            hg.nodes[term].data["idxs"][:, 0],
+            hg.nodes[term].data["idxs"][:, -1],
+        )[:, None]
 
     for key in g.ndata.keys():
         hg.nodes['n1'].data[key] = g.ndata[key]

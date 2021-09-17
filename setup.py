@@ -1,5 +1,5 @@
 """
-hpnotiq
+hpno
 Hierarchical Passing of Node Tensors
 """
 import sys
@@ -21,7 +21,7 @@ except:
 
 setup(
     # Self-descriptive entries which should always be present
-    name='hpnotiq',
+    name='hpno',
     author='Yuanqing Wang',
     author_email='wangyq@wangyq.net',
     description=short_description[0],
