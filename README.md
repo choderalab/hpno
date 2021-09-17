@@ -1,9 +1,5 @@
 hpno
 ==============================
-[//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/choderalab/hpno/workflows/CI/badge.svg)](https://github.com/choderalab/hpno/actions?query=branch%3Amaster+workflow%3ACI)
-
-
 
 Hierarchical Passing of Node Tensors
 
