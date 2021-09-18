@@ -224,3 +224,172 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         graph = self.downward(graph)
         feat = graph.nodes['n1'].data['h']
         return feat
+
+
+class StochasticHierarchicalPathNetworkLayer(HierarchicalPathNetworkLayer):
+    """ Hierarchical Path Network Layer.
+
+    Parameters
+    ----------
+    in_features : int
+        Input features.
+
+    out_features : int
+        Output features.
+
+    hidden_features : int
+        Hidden features.
+
+    max_level : int
+        Maximum level of hierarchical message passing.
+
+    activation : Callable
+        Activation function for layer.
+
+    ring : bool
+        If true, include ring information.
+
+    Attributes
+    ----------
+    d_up_ : `torch.nn.Linear`
+        Upstream message passing.
+
+    d_down_ : `torch.nn.Linear`
+        Downsteam message passing.
+
+    """
+    def __init__(
+            self,
+            in_features: int,
+            out_features: int,
+            hidden_features: Union[int, None]=None,
+            max_level: int=4,
+            activation: Callable=torch.nn.SiLU(),
+            ring=False,
+            sloppy=0.9,
+        ):
+        assert ring is False, "For stochastic version, no ring is supported."
+        super(StochasticHierarchicalPathNetworkLayer, self).__init__(
+            in_features=in_features,
+            out_features=out_features,
+            hidden_features=hidden_features,
+            max_level=max_level,
+            activation=activation,
+            ring=False,
+        )
+
+        self.sloppy = sloppy
+
+    def upward(self, graph):
+        """ Upward pass.
+
+        Parameters
+        ----------
+        graph : dgl.DGLHeteroGraph
+            Input graph.
+
+        Returns
+        -------
+        dgl.DGLHeteroGraph: Output graph.
+
+        """
+        graph = graph.local_var()
+        for idx in range(2, self.max_level+1):
+            graph.multi_update_all(
+                etype_dict={
+                    'n%s_as_%s_in_n%s' % (idx-1, pos_idx, idx): (
+
+                        # msg_func
+                        dgl.function.copy_src(
+                            src='h',
+                            out='m%s' % pos_idx,
+                        ),
+
+                        # reduce_func
+                        dgl.function.sum(
+                            msg='m%s' % pos_idx,
+                            out='h%s' % pos_idx,
+                        ),
+
+                    ) for pos_idx in range(2)
+                },
+                cross_reducer='sum'
+            )
+
+            if idx == 2: # no sloppy operation at level 2
+                graph.apply_nodes(
+                    func=lambda nodes: {
+                        'h':  getattr(self, 'd_up_%s' % idx)(
+                            torch.cat(
+                                [
+                                    nodes.data['is_ring']
+                                    for _ in range(int(self.ring))
+                                ]
+                                + [
+                                    nodes.data['h%s' % pos_idx]
+                                    for pos_idx in range(2)
+                                ],
+                                dim=-1
+                            )
+                        )
+                    },
+                    ntype='n%s' % idx,
+                )
+
+            else:
+                number_of_nodes = graph.number_of_nodes('n%s' % idx)
+                number_of_sloppy_nodes = int(number_of_nodes * self.sloppy)
+
+                # list all indicies
+                node_idxs = torch.randperm(
+                    number_of_nodes,
+                )
+
+                # select indicies
+                sloppy_idxs = node_idxs[:number_of_sloppy_nodes]
+                non_sloppy_idxs = node_idxs[number_of_sloppy_nodes:]
+
+                # apply non-sloppy
+                graph.apply_nodes(
+                    func=lambda nodes: {
+                        'h':  getattr(self, 'd_up_%s' % idx)(
+                            torch.cat(
+                                [
+                                    nodes.data['h%s' % pos_idx]
+                                    for pos_idx in range(2)
+                                ],
+                                dim=-1
+                            )
+                        )
+                    },
+                    ntype='n%s' % idx,
+                    v=non_sloppy_idxs,
+                )
+
+                # apply sloppy
+                graph.apply_nodes(
+                    func=lambda nodes: {
+                        'h':  sum(
+                                [
+                                    nodes.data['h%s' % pos_idx]
+                                    for pos_idx in range(2)
+                                ],
+                        ),
+                    },
+                    ntype='n%s' % idx,
+                    v=sloppy_idxs,
+                )
+
+        return graph
+
+
+
+
+
+
+
+
+
+
+
+        return graph

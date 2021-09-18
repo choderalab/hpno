@@ -7,7 +7,10 @@ import numpy as np
 import torch
 import dgl
 from typing import Callable, Union
-from .layer import HierarchicalPathNetworkLayer
+from .layer import (
+    HierarchicalPathNetworkLayer,
+    StochasticHierarchicalPathNetworkLayer,
+)
 from .readout import GraphReadout
 
 # =============================================================================
@@ -57,6 +60,7 @@ class HierarchicalPathNetwork(torch.nn.Module):
         ring: bool=False,
         activation: Callable=torch.nn.SiLU(),
         readout: Union[None, Callable]=None,
+        stochastic=False,
     ):
         super(HierarchicalPathNetwork, self).__init__()
         self.in_features = in_features
@@ -67,6 +71,12 @@ class HierarchicalPathNetwork(torch.nn.Module):
         self.max_level = max_level
         self.ring = ring
         self.readout = readout
+        self.stochastic = stochastic
+
+        if stochastic:
+            layer = StochasticHierarchicalPathNetworkLayer
+        else:
+            layer = HierarchicalPathNetworkLayer
 
         for idx in range(depth):
             _in_features = in_features if idx == 0 else hidden_features
