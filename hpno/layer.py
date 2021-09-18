@@ -266,7 +266,6 @@ class StochasticHierarchicalPathNetworkLayer(HierarchicalPathNetworkLayer):
             max_level: int=4,
             activation: Callable=torch.nn.SiLU(),
             ring=False,
-            sloppy=0.9,
         ):
         assert ring is False, "For stochastic version, no ring is supported."
         super(StochasticHierarchicalPathNetworkLayer, self).__init__(
@@ -278,15 +277,31 @@ class StochasticHierarchicalPathNetworkLayer(HierarchicalPathNetworkLayer):
             ring=False,
         )
 
-        self.sloppy = sloppy
+    def trim(self, graph):
+        graph = graph.local_var()
+        desired_number_of_nodes = graph.number_of_nodes("n2")
+        for level in range(3, self.max_level+1):
+            number_of_nodes = graph.number_of_nodes("n%s" % level)
+            node_indices_to_delete = torch.randperm(
+                number_of_nodes
+            )[desired_number_of_nodes:]
+            graph.remove_nodes(
+                nids=node_indices_to_delete,
+                ntype="n%s" % level
+            )
 
-    def upward(self, graph):
-        """ Upward pass.
+        return graph
+
+    def forward(self, graph, feat):
+        """ Forward pass.
 
         Parameters
         ----------
         graph : dgl.DGLHeteroGraph
             Input graph.
+
+        feat :  torch.Tensor
+            Input features.
 
         Returns
         -------
@@ -294,102 +309,6 @@ class StochasticHierarchicalPathNetworkLayer(HierarchicalPathNetworkLayer):
 
         """
         graph = graph.local_var()
-        for idx in range(2, self.max_level+1):
-            graph.multi_update_all(
-                etype_dict={
-                    'n%s_as_%s_in_n%s' % (idx-1, pos_idx, idx): (
-
-                        # msg_func
-                        dgl.function.copy_src(
-                            src='h',
-                            out='m%s' % pos_idx,
-                        ),
-
-                        # reduce_func
-                        dgl.function.sum(
-                            msg='m%s' % pos_idx,
-                            out='h%s' % pos_idx,
-                        ),
-
-                    ) for pos_idx in range(2)
-                },
-                cross_reducer='sum'
-            )
-
-            if idx == 2: # no sloppy operation at level 2
-                graph.apply_nodes(
-                    func=lambda nodes: {
-                        'h':  getattr(self, 'd_up_%s' % idx)(
-                            torch.cat(
-                                [
-                                    nodes.data['is_ring']
-                                    for _ in range(int(self.ring))
-                                ]
-                                + [
-                                    nodes.data['h%s' % pos_idx]
-                                    for pos_idx in range(2)
-                                ],
-                                dim=-1
-                            )
-                        )
-                    },
-                    ntype='n%s' % idx,
-                )
-
-            else:
-                number_of_nodes = graph.number_of_nodes('n%s' % idx)
-                number_of_sloppy_nodes = int(number_of_nodes * self.sloppy)
-
-                # list all indicies
-                node_idxs = torch.randperm(
-                    number_of_nodes,
-                )
-
-                # select indicies
-                sloppy_idxs = node_idxs[:number_of_sloppy_nodes]
-                non_sloppy_idxs = node_idxs[number_of_sloppy_nodes:]
-
-                # apply non-sloppy
-                graph.apply_nodes(
-                    func=lambda nodes: {
-                        'h':  getattr(self, 'd_up_%s' % idx)(
-                            torch.cat(
-                                [
-                                    nodes.data['h%s' % pos_idx]
-                                    for pos_idx in range(2)
-                                ],
-                                dim=-1
-                            )
-                        )
-                    },
-                    ntype='n%s' % idx,
-                    v=non_sloppy_idxs,
-                )
-
-                # apply sloppy
-                graph.apply_nodes(
-                    func=lambda nodes: {
-                        'h':  sum(
-                                [
-                                    nodes.data['h%s' % pos_idx]
-                                    for pos_idx in range(2)
-                                ],
-                        ),
-                    },
-                    ntype='n%s' % idx,
-                    v=sloppy_idxs,
-                )
-
-        return graph
-
-
-
-
-
-
-
-
-
-
-
-        return graph
+        graph = self.trim(graph)
+        feat = super().forward(graph, feat)
+        return feat
