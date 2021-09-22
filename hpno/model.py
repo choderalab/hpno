@@ -79,7 +79,6 @@ class HierarchicalPathNetwork(torch.nn.Module):
                 HierarchicalPathNetworkLayer(
                     in_features=_in_features,
                     out_features=_out_features,
-                    hidden_features=hidden_features,
                     activation=_activation,
                     max_level=max_level,
                     ring=ring,

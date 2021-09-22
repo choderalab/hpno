@@ -60,7 +60,8 @@ def get_indices_from_adjacency_matrix(a, max_level=4):
                 base_pairs[:, idx_pos + 1], base_pairs[:, idx_pos + level - 1]
             )
 
-        mask *= 1 - 1 * torch.eq(base_pairs[:, 0], base_pairs[:, -1])
+        if level == 3:
+            mask *= 1 - 1 * torch.eq(base_pairs[:, 0], base_pairs[:, -1])
 
         mask = mask > 0.0
 
@@ -129,6 +130,7 @@ def heterograph(g, max_level=4):
             for (ordering, subgraph_idxs) in enumerate(list(idxs[term]))
         }
 
+    print(idxs_to_ordering)
     # NOTE:
     # here we define all the possible
     # 'has' and 'in' relationships.
@@ -136,51 +138,62 @@ def heterograph(g, max_level=4):
     # we'll test later to see if this adds too much overhead
     for small_idx in range(1, max_level+1): # child
         for big_idx in range(small_idx + 1, max_level+1): # parent
-            for pos_idx in range(big_idx - small_idx + 1): # position
-
                 # `in` relationship
                 hg[ # (source, relationship, destination)
                     (
                         "n%s" % small_idx,
-                        "n%s_as_%s_in_n%s" % (small_idx, pos_idx, big_idx),
+                        "n%s_in_n%s" % (small_idx, big_idx),
                         "n%s" % big_idx,
                     )
-                ] = np.stack( # use `np.array` here but convert to list later
+                ] = np.concatenate(
                     [
-                        np.array(
+                        np.stack( # use `np.array` here but convert to list later
                             [
-                                idxs_to_ordering["n%s" % small_idx][tuple(x)]
-                                for x in idxs["n%s" % big_idx][
-                                    :, pos_idx : pos_idx + small_idx
-                                ]
-                            ]
-                        ),
-                        np.arange(idxs["n%s" % big_idx].shape[0]),
+                                np.array(
+                                    [
+                                        idxs_to_ordering["n%s" % small_idx][tuple(x)]
+                                        for x in idxs["n%s" % big_idx][
+                                            :, pos_idx : pos_idx + small_idx
+                                        ]
+                                    ]
+                                ),
+                                np.arange(idxs["n%s" % big_idx].shape[0]),
+                            ],
+                            axis=1,
+                        )
+                        for pos_idx in range(big_idx - small_idx + 1)
                     ],
-                    axis=1,
+                    axis=0,
                 )
 
                 # define the same for `has` relationship
                 hg[
                     (
                         "n%s" % big_idx,
-                        "n%s_has_%s_n%s" % (big_idx, pos_idx, small_idx),
+                        "n%s_has_n%s" % (big_idx, small_idx),
                         "n%s" % small_idx,
                     )
-                ] = np.stack(
+                ] = np.concatenate(
                     [
-                        np.arange(idxs["n%s" % big_idx].shape[0]),
-                        np.array(
+                        np.stack(
                             [
-                                idxs_to_ordering["n%s" % small_idx][tuple(x)]
-                                for x in idxs["n%s" % big_idx][
-                                    :, pos_idx : pos_idx + small_idx
-                                ]
-                            ]
-                        ),
+                                np.arange(idxs["n%s" % big_idx].shape[0]),
+                                np.array(
+                                    [
+                                        idxs_to_ordering["n%s" % small_idx][tuple(x)]
+                                        for x in idxs["n%s" % big_idx][
+                                            :, pos_idx : pos_idx + small_idx
+                                            ]
+                                    ]
+                                ),
+                            ],
+                            axis=1,
+                        )
+                        for pos_idx in range(big_idx - small_idx + 1)
                     ],
-                    axis=1,
+                    axis=0,
                 )
+
 
     for term in ['n%s' % idx for idx in range(1, max_level+1)]:
         hg[
@@ -208,6 +221,8 @@ def heterograph(g, max_level=4):
                 ],
                 axis=1,
             )
+
+    print(hg)
 
     # convert all to python `List`
     hg = dgl.heterograph({key: list(value) for key, value in hg.items()})
