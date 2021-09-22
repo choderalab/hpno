@@ -68,8 +68,14 @@ class HierarchicalPathNetwork(torch.nn.Module):
         self.ring = ring
         self.readout = readout
 
+        self.in_linear = torch.nn.Sequential(
+            torch.nn.Linear(in_features, hidden_features),
+            activation,
+            torch.nn.Linear(hidden_features, hidden_features)
+        )
+
         for idx in range(depth):
-            _in_features = in_features if idx == 0 else hidden_features
+            _in_features = hidden_features
             _out_features = out_features if idx == depth-1 else hidden_features
             _activation = torch.nn.Identity() if idx == depth-1 else activation
 
@@ -105,6 +111,7 @@ class HierarchicalPathNetwork(torch.nn.Module):
             Downsteam message passing.
         """
         graph = graph.local_var()
+        feat = self.in_linear(feat)
         for idx in range(self.depth):
             feat = getattr(self, "hpno_layer_%s" % idx)(graph, feat)
 
