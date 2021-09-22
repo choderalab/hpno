@@ -60,8 +60,7 @@ def get_indices_from_adjacency_matrix(a, max_level=4):
                 base_pairs[:, idx_pos + 1], base_pairs[:, idx_pos + level - 1]
             )
 
-        if level == 3:
-            mask *= 1 - 1 * torch.eq(base_pairs[:, 0], base_pairs[:, -1])
+        mask *= 1 - 1 * torch.eq(base_pairs[:, 0], base_pairs[:, -1])
 
         mask = mask > 0.0
 
