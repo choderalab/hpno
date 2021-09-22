@@ -78,8 +78,6 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         graph = graph.local_var()
 
         for idx in range(2, self.max_level+1):
-            print(idx)
-            print(graph.nodes['n%s' % (idx-1)].data['h'])
             graph.multi_update_all(
                 etype_dict={
                     'n%s_in_n%s' % (idx-1, idx): (
