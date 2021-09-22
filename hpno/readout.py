@@ -46,8 +46,7 @@ class GraphReadout(torch.nn.Module):
         self.activation = activation
         self.upward_layer = HierarchicalPathNetworkLayer(
             in_features=in_features,
-            out_features=out_features,
-            hidden_features=hidden_features,
+            out_features=in_features,
         )
 
         # hack the layer by removing all the downward steps
@@ -57,7 +56,7 @@ class GraphReadout(torch.nn.Module):
 
         self.summarize_layer = torch.nn.Sequential(
             torch.nn.Linear(
-                in_features + (max_level - 1) * hidden_features,
+                max_level * in_features,
                 hidden_features,
             ),
             activation,

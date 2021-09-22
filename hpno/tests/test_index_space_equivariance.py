@@ -34,7 +34,7 @@ def test_layer_equivariance(graphs_and_features):
     g0, g1, h0, h1, permutation_matrix = graphs_and_features
 
     import hpno
-    layer = hpno.HierarchicalPathNetworkLayer(3, 4, 5, max_level=4)
+    layer = hpno.HierarchicalPathNetworkLayer(3, 4, max_level=4)
     y0 = layer(g0, h0)
     y1 = layer(g1, h1)
     npt.assert_almost_equal(
@@ -60,7 +60,7 @@ def test_readout_invariance(graphs_and_features):
     g0, g1, h0, h1, permutation_matrix = graphs_and_features
 
     import hpno
-    readout = hpno.GraphReadout(3, 4, 5, max_level=4)
+    readout = hpno.GraphReadout(3, 4, 2, max_level=4)
     y0 = readout(g0, h0)
     y1 = readout(g1, h1)
     npt.assert_almost_equal(
@@ -74,9 +74,9 @@ def test_model_and_readout_invariance(graphs_and_features):
 
     import hpno
     readout = hpno.HierarchicalPathNetwork(
-        3, 5, 5, 2,
+        3, 4, 5, 2,
         max_level=4,
-        readout=hpno.GraphReadout(5, 5, 6)
+        readout=hpno.GraphReadout(4, 4, 6)
     )
 
     y0 = readout(g0, h0)

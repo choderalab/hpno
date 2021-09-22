@@ -129,7 +129,6 @@ def heterograph(g, max_level=4):
             for (ordering, subgraph_idxs) in enumerate(list(idxs[term]))
         }
 
-    print(idxs_to_ordering)
     # NOTE:
     # here we define all the possible
     # 'has' and 'in' relationships.
@@ -221,7 +220,6 @@ def heterograph(g, max_level=4):
                 axis=1,
             )
 
-    print(hg)
 
     # convert all to python `List`
     hg = dgl.heterograph({key: list(value) for key, value in hg.items()})

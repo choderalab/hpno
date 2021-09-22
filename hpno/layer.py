@@ -76,26 +76,30 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
 
         """
         graph = graph.local_var()
+
         for idx in range(2, self.max_level+1):
+            print(idx)
+            print(graph.nodes['n%s' % (idx-1)].data['h'])
             graph.multi_update_all(
                 etype_dict={
-                    'n%s_as_%s_in_n%s' % (idx-1, pos_idx, idx): (
+                    'n%s_in_n%s' % (idx-1, idx): (
 
                         # msg_func
                         dgl.function.copy_src(
                             src='h',
-                            out='m%s' % pos_idx,
+                            out='m',
                         ),
 
                         # reduce_func
-                        dgl.function.sum(
-                            msg='m%s' % pos_idx,
-                            out='h',
-                        ),
+                        # dgl.function.sum(
+                        #     msg='m',
+                        #     out='h',
+                        # ),
 
-                    ) for pos_idx in range(2)
+                        lambda node: {'h': torch.prod(node.mailbox['m'], dim=1)}
+                    )
                 },
-                cross_reducer='prod'
+                cross_reducer='sum'
             )
 
         return graph
@@ -117,11 +121,11 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
 
             graph.multi_update_all(
                 etype_dict={
-                    'n%s_has_%s_n%s' % (idx, pos_idx, idx-1): (
+                    'n%s_has_n%s' % (idx, idx-1): (
                         dgl.function.copy_src(src='h', out='m'),
                         dgl.function.sum(msg='m', out='h_down'),
                         lambda node: {'h': node.data['h'] + node.data['h_down']},
-                    ) for pos_idx in range(2)
+                    )
                 },
                 cross_reducer='sum'
             )
