@@ -100,9 +100,6 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                 cross_reducer='sum'
             )
 
-        for idx in range(1, self.max_level+1):
-            graph.nodes['n%s' % idx].data['h_softmax'] = graph.nodes['n%s' % idx].data['h'].softmax(dim=-1)
-
         return graph
 
     def downward(self, graph):
@@ -128,14 +125,14 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                     'n%s_has_n%s' % (idx, idx-1): (
                         dgl.function.copy_src(src='h_softmax', out='m'),
                         dgl.function.sum(msg='m', out='h_down'),
-                        lambda node: {
-                            'h_softamx': (
-                                node.data['h'] + node.data['h_down']
-                            ).softmax(dim=-1)
-                        },
                     )
                 },
                 cross_reducer='sum'
+            )
+
+            graph.nodes['n%s' % (idx-1)].data['h_softmax'] = dgl.nn.functional.edge_softmax(
+                graph=graph.edge_type_subgraph(['n%s_in_g' % (idx-1)]),
+                logits=(graph.nodes['n%s' % (idx-1)].data['h'] + graph.nodes['n%s' % (idx-1)].data['h_down'])
             )
 
         graph.update_all(
