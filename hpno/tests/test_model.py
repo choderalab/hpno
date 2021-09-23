@@ -28,4 +28,4 @@ def test_ethane_model_with_readout():
         )
     )
     feat = model(g, g.nodes['n1'].data['h'])
-    assert feat.shape == torch.Size([8, 4])
+    assert feat.shape == torch.Size([1, 5])
