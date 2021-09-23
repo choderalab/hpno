@@ -77,6 +77,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         """
         graph = graph.local_var()
 
+        # add log == multiply
         for idx in range(2, self.max_level+1):
             graph.multi_update_all(
                 etype_dict={
@@ -89,16 +90,18 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                         ),
 
                         # reduce_func
-                        # dgl.function.sum(
-                        #     msg='m',
-                        #     out='h',
-                        # ),
+                        dgl.function.sum(
+                            msg='m',
+                            out='h',
+                        ),
 
-                        lambda node: {'h': torch.prod(node.mailbox['m'], dim=1)}
                     )
                 },
                 cross_reducer='sum'
             )
+
+        for idx in range(1, self.max_level+1):
+            graph.nodes['n%s' % idx].data['h'] = graph.nodes['n%s' % idx].data['h'].softmax(dim=0)
 
         return graph
 
