@@ -92,26 +92,25 @@ class GraphReadout(torch.nn.Module):
         graph = self.upward_layer.upward(graph)
 
         # graph all levels
-        for idx in range(1, self.max_level+1):
-            graph.multi_update_all(
-                etype_dict={
-                    'n%s_in_g' % idx: (
-                        # msg_func
-                        dgl.function.copy_src(
-                            src='h',
-                            out='m%s' % idx,
-                        ),
+        graph.multi_update_all(
+            etype_dict={
+                'n%s_in_g' % idx: (
+                    # msg_func
+                    dgl.function.copy_src(
+                        src='h',
+                        out='m%s' % idx,
+                    ),
 
-                        # reduce_func
-                        dgl.function.sum(
-                            msg='m%s' % idx,
-                            out='h%s' % idx,
-                        ),
-
-                    ) for pos_idx in range(2)
-                },
-                cross_reducer='sum'
-            )
+                    # reduce_func
+                    dgl.function.sum(
+                        msg='m%s' % idx,
+                        out='h%s' % idx,
+                    ),
+                )
+                for idx in range(1, self.max_level+1)
+            },
+            cross_reducer='sum'
+        )
 
         # summarize all levels
         graph.apply_nodes(
