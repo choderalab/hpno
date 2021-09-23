@@ -118,8 +118,11 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
 
         """
         graph = graph.local_var()
+        graph.apply_nodes(
+            lambda node: {'h_softmax': node.data['h'].softmax(dim=-1)},
+            ntype='n%s' % self.max_level
+        )
         for idx in range(self.max_level, 1, -1):
-
             graph.multi_update_all(
                 etype_dict={
                     'n%s_has_n%s' % (idx, idx-1): (
@@ -130,6 +133,12 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                 },
                 cross_reducer='sum'
             )
+
+            if idx != 2:
+                graph.apply_nodes(
+                    lambda node: {'h_softmax': node.data['h'].softmax(dim=-1)},
+                    ntype='n%s' % (idx-1)
+                )
 
         graph.apply_nodes(
             func=lambda nodes: {
