@@ -101,7 +101,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
             )
 
         for idx in range(1, self.max_level+1):
-            graph.nodes['n%s' % idx].data['h'] = graph.nodes['n%s' % idx].data['h'].softmax(dim=0)
+            graph.nodes['n%s' % idx].data['h_softmax'] = graph.nodes['n%s' % idx].data['h'].softmax(dim=-1)
 
         return graph
 
@@ -123,7 +123,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
             graph.multi_update_all(
                 etype_dict={
                     'n%s_has_n%s' % (idx, idx-1): (
-                        dgl.function.copy_src(src='h', out='m'),
+                        dgl.function.copy_src(src='h_softmax', out='m'),
                         dgl.function.sum(msg='m', out='h_down'),
                         lambda node: {'h': node.data['h'] + node.data['h_down']},
                     )
