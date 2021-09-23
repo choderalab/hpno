@@ -58,7 +58,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         self.ring = ring
         self.activation = activation
         self.linear = torch.nn.Sequential(
-            torch.nn.Linear(2*in_features, out_features),
+            torch.nn.Linear(3*in_features, out_features),
             activation,
         )
 
@@ -128,20 +128,25 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                     'n%s_has_n%s' % (idx, idx-1): (
                         dgl.function.copy_src(src='h_softmax', out='m'),
                         dgl.function.sum(msg='m', out='h_down'),
-                        lambda node: {'h': node.data['h'] + node.data['h_down']},
+                        lambda node: {
+                            'h_softamx': (
+                                node.data['h'] + node.data['h_down']
+                            ).softmax(dim=-1)
+                        },
                     )
                 },
                 cross_reducer='sum'
             )
 
-            graph.apply_nodes(
-                lambda node: {'h_softmax': node.data['h'].softmax(dim=-1)},
-                ntype='n%s' % (idx-1)
-            )
-
         graph.update_all(
             dgl.function.copy_src(src='h_softmax', out='m'),
             dgl.function.sum(msg='m', out='h_down'),
+            etype='n2_has_n1',
+        )
+
+        graph.update_all(
+            dgl.function.copy_src(src='h', out='m'),
+            dgl.function.sum(msg='m', out='h2'),
             etype='n2_has_n1',
         )
 
@@ -151,6 +156,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                         torch.cat(
                             [
                                 nodes.data['h'],
+                                nodes.data['h2'],
                                 nodes.data['h_down'],
                             ],
                             dim=-1,
