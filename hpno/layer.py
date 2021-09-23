@@ -148,6 +148,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
             etype='n2_has_n1',
         )
 
+
         graph.apply_nodes(
             func=lambda nodes: {
                 'h': self.linear(
