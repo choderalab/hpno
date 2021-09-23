@@ -31,7 +31,7 @@ def run(args):
         out_features=args.hidden_features,
         hidden_features=args.hidden_features,
         depth=args.depth,
-        activation=torch.nn.Sigmoid(),
+        max_level=3,
         readout=hpno.GraphReadout(
             in_features=args.hidden_features,
             out_features=out_features,
@@ -76,7 +76,6 @@ def run(args):
                 target=y,
             )
             scheduler.step(loss)
-            print(loss)
 
         if optimizer.param_groups[0]["lr"] <= 0.01 * args.learning_rate: break
 
@@ -114,8 +113,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
             )
     parser.add_argument("--weight_decay", type=float, default=0.0)
-    parser.add_argument("--hidden_features", type=int, default=16)
-    parser.add_argument("--depth", type=int, default=2)
+    parser.add_argument("--data", type=str, default="cora")
+    parser.add_argument("--hidden_features", type=int, default=128)
+    parser.add_argument("--depth", type=int, default=1)
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--n_epochs", type=int, default=1000)
     parser.add_argument("--out", type=str, default="out")
