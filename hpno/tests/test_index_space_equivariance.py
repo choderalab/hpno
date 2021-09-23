@@ -84,5 +84,5 @@ def test_model_and_readout_invariance(graphs_and_features):
     npt.assert_almost_equal(
         y0.detach().numpy(),
         y1.detach().numpy(),
-        decimal=5,
+        decimal=3,
     )
