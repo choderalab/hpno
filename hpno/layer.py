@@ -117,9 +117,9 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         graph = graph.local_var()
         graph.nodes['n%s' % self.max_level].data['h_softmax'] = dgl.nn.functional.edge_softmax(
             graph=graph.edge_type_subgraph(['n%s_in_g' % self.max_level]),
-            logits=(graph.nodes['n%s' % self.max_level].data['h'] + graph.nodes['n%s' % self.max_level].data['h_down'])
+            logits=(graph.nodes['n%s' % self.max_level].data['h'])
         )
-        
+
         for idx in range(self.max_level, 2, -1):
             graph.multi_update_all(
                 etype_dict={
