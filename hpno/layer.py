@@ -133,7 +133,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                 cross_reducer='sum'
             )
 
-            graph.nodes['n%s' % idx].data['h_softmax'] = graph.nodes['n%s' % idx].data['h'].softmax(dim=-1)
+            graph.nodes['n%s' % (idx-1)].data['h_softmax'] = graph.nodes['n%s' % (idx-1)].data['h'].softmax(dim=-1)
 
             # graph.nodes['n%s' % (idx-1)].data['h_softmax'] = dgl.nn.functional.edge_softmax(
             #     graph=graph.edge_type_subgraph(['n%s_in_g' % (idx-1)]),
