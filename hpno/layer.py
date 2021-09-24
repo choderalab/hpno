@@ -90,10 +90,14 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                         ),
 
                         # reduce_func
-                        dgl.function.mean(
-                            msg='m',
-                            out='h',
-                        ),
+                        # dgl.function.mean(
+                        #     msg='m',
+                        #     out='h',
+                        # ),
+
+                        lambda node: {
+                            'h': torch.prod(node.mailbox['m'], dim=1),
+                        },
 
                     )
                 },
@@ -149,11 +153,11 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
             #     cross_reducer='sum'
             # )
             #
-            
-            graph.apply_nodes(
-                lambda nodes: {"h": nodes.data["h"].tanh()},
-                ntype="n%s" % idx,
-            )
+
+            # graph.apply_nodes(
+            #     lambda nodes: {"h": nodes.data["h"].tanh()},
+            #     ntype="n%s" % idx,
+            # )
 
             graph.update_all(
                 dgl.function.copy_src("h", "m"),
