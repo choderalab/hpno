@@ -90,7 +90,7 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                         ),
 
                         # reduce_func
-                        dgl.function.sum(
+                        dgl.function.mean(
                             msg='m',
                             out='h',
                         ),
@@ -116,46 +116,54 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         """
         graph = graph.local_var()
 
-        for idx in range(self.max_level, 2, -1):
-            graph.apply_edges(
-                dgl.function.copy_src('h', 'h_e'),
-                etype='n%s_has_n%s' % (idx, idx-1),
-            )
-
-            graph.apply_edges(
-                lambda edges: {
-                    'h_e': dgl.nn.functional.edge_softmax(
-                        graph.edge_type_subgraph(['n%s_has_n%s' % (idx, idx-1)]),
-                        logits=edges.data['h_e'],
-                    )
-                },
-                etype='n%s_has_n%s' % (idx, idx-1),
-            )
-
-            graph.multi_update_all(
-                etype_dict={
-                    'n%s_has_n%s' % (idx, idx-1): (
-                        dgl.function.copy_edge(edge='h_e', out='m'),
-                        dgl.function.sum(msg='m', out='h_down'),
-                    )
-                },
-                cross_reducer='sum'
-            )
-
-            graph.apply_nodes(
-                lambda nodes: {'h': nodes.data['h'] + nodes.data['h_down']},
-                ntype='n%s' % (idx-1),
-            )
-
-        graph.update_all(
-            dgl.function.copy_src(src='h_down', out='m'),
-            dgl.function.sum(msg='m', out='h_down'),
-            etype='n2_has_n1',
-        )
-
         graph.update_all(
             dgl.function.copy_src(src='h', out='m'),
             dgl.function.sum(msg='m', out='h2'),
+            etype='n2_has_n1',
+        )
+
+        for idx in range(self.max_level, 2, -1):
+            # graph.apply_edges(
+            #     dgl.function.copy_src('h', 'h_e'),
+            #     etype='n%s_has_n%s' % (idx, idx-1),
+            # )
+
+            # graph.apply_edges(
+            #     lambda edges: {
+            #         'h_e': dgl.nn.functional.edge_softmax(
+            #             graph.edge_type_subgraph(['n%s_has_n%s' % (idx, idx-1)]),
+            #             logits=edges.data['h_e'],
+            #             norm_by="src",
+            #         )
+            #     },
+            #     etype='n%s_has_n%s' % (idx, idx-1),
+            # )
+
+            # graph.multi_update_all(
+            #     etype_dict={
+            #         'n%s_has_n%s' % (idx, idx-1): (
+            #             dgl.function.copy_edge(edge='h_e', out='m'),
+            #             dgl.function.sum(msg='m', out='h'),
+            #         )
+            #     },
+            #     cross_reducer='sum'
+            # )
+            #
+            
+            graph.apply_nodes(
+                lambda nodes: {"h": nodes.data["h"].tanh()},
+                ntype="n%s" % idx,
+            )
+
+            graph.update_all(
+                dgl.function.copy_src("h", "m"),
+                dgl.function.sum("m", "h"),
+                etype="n%s_has_n%s" % (idx, (idx-1)),
+            )
+
+        graph.update_all(
+            dgl.function.copy_src(src='h', out='m'),
+            dgl.function.sum(msg='m', out='h_down'),
             etype='n2_has_n1',
         )
 
