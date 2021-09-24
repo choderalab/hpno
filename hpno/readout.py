@@ -102,7 +102,7 @@ class GraphReadout(torch.nn.Module):
                     ),
 
                     # reduce_func
-                    dgl.function.sum(
+                    dgl.function.mean(
                         msg='m%s' % idx,
                         out='h%s' % idx,
                     ),
