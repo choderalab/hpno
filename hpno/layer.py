@@ -62,6 +62,17 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
             activation,
         )
 
+        for idx in range(1, max_level):
+            setattr(
+                self,
+                "linear_%s" % idx,
+                torch.nn.Sequential(
+                    torch.nn.Linear(in_features, in_features),
+                    activation,
+                    torch.nn.Linear(in_features, in_features),
+                )
+            )
+
     def upward(self, graph):
         """ Upward pass.
 
@@ -79,29 +90,27 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
 
         # add log == multiply
         for idx in range(2, self.max_level+1):
-            graph.multi_update_all(
-                etype_dict={
-                    'n%s_in_n%s' % (idx-1, idx): (
-
-                        # msg_func
-                        dgl.function.copy_src(
-                            src='h',
-                            out='m',
-                        ),
-
-                        # reduce_func
-                        # dgl.function.mean(
-                        #     msg='m',
-                        #     out='h',
-                        # ),
-
-                        lambda node: {
-                            'h': torch.prod(node.mailbox['m'], dim=1),
-                        },
-
+            graph.apply_nodes(
+                lambda node: {
+                    'h': getattr(self, "linear_%s" % (idx-1))(
+                        node.data['h']
                     )
                 },
-                cross_reducer='sum'
+                ntype='n%s' % (idx-1),
+            )
+
+            graph.update_all(
+                # msg_func
+                dgl.function.copy_src(
+                    src='h',
+                    out='m',
+                ),
+
+                lambda node: {
+                    'h': torch.prod(node.mailbox['m'], dim=1),
+                },
+
+                etype='n%s_in_n%s' % (idx-1, idx),
             )
 
         return graph
@@ -127,38 +136,6 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
         )
 
         for idx in range(self.max_level, 2, -1):
-            # graph.apply_edges(
-            #     dgl.function.copy_src('h', 'h_e'),
-            #     etype='n%s_has_n%s' % (idx, idx-1),
-            # )
-
-            # graph.apply_edges(
-            #     lambda edges: {
-            #         'h_e': dgl.nn.functional.edge_softmax(
-            #             graph.edge_type_subgraph(['n%s_has_n%s' % (idx, idx-1)]),
-            #             logits=edges.data['h_e'],
-            #             norm_by="src",
-            #         )
-            #     },
-            #     etype='n%s_has_n%s' % (idx, idx-1),
-            # )
-
-            # graph.multi_update_all(
-            #     etype_dict={
-            #         'n%s_has_n%s' % (idx, idx-1): (
-            #             dgl.function.copy_edge(edge='h_e', out='m'),
-            #             dgl.function.sum(msg='m', out='h'),
-            #         )
-            #     },
-            #     cross_reducer='sum'
-            # )
-            #
-
-            # graph.apply_nodes(
-            #     lambda nodes: {"h": nodes.data["h"].tanh()},
-            #     ntype="n%s" % idx,
-            # )
-
             graph.update_all(
                 dgl.function.copy_src("h", "m"),
                 dgl.function.sum("m", "h"),
