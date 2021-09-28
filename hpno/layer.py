@@ -82,26 +82,12 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                 )
             )
 
-        # down
-        for idx in range(1, max_level): # hard-code 1 for neighbor
-            if idx == 1:
-                _out_features = out_features
-                _in_features = in_features
-            else:
-                _out_features = hidden_features
-                _in_features = hidden_features
-
-            setattr(
-                self,
-                'd_down_%s' % idx,
-                torch.nn.Sequential(
-                    torch.nn.Linear(
-                        _in_features + hidden_features,
-                        _out_features,
-                    ),
-                    activation,
-                )
-            )
+        # final
+        self.final_linear = torch.nn.Sequential(
+            torch.nn.Linear(in_features+2*hidden_features, hidden_features),
+            activation,
+            torch.nn.Linear(hidden_features, out_features),
+        )
 
     def upward(self, graph):
         """ Upward pass.
@@ -144,10 +130,6 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
                     'h':  getattr(self, 'd_up_%s' % idx)(
                         torch.cat(
                             [
-                                nodes.data['is_ring']
-                                for _ in range(int(self.ring))
-                            ]
-                            + [
                                 nodes.data['h%s' % pos_idx]
                                 for pos_idx in range(2)
                             ],
@@ -173,32 +155,59 @@ class HierarchicalPathNetworkLayer(torch.nn.Module):
 
         """
         graph = graph.local_var()
-        for idx in range(self.max_level, 1, -1):
 
+        graph.multi_update_all(
+            {
+                "n2_has_%s_n1" % pos_idx: (
+                    dgl.function.copy_src(src='h', out='m'),
+                    dgl.function.sum(msg='m', out='h2'),
+                )
+                for pos_idx in range(1)
+            },
+            cross_reducer="sum",
+        )
+
+        for idx in range(self.max_level, 2, -1):
             graph.multi_update_all(
-                etype_dict={
-                    'n%s_has_%s_n%s' % (idx, pos_idx, idx-1): (
-                        dgl.function.copy_src(src='h', out='m'),
-                        dgl.function.sum(msg='m', out='h_down')
-                    ) for pos_idx in range(2)
+                {
+                    "n%s_has_%s_n%s" % (idx, pos_idx, (idx-1)): (
+                        dgl.function.copy_src("h", "m"),
+                        dgl.function.sum("m", "h"),
+                    )
+                    for pos_idx in range(1)
                 },
-                cross_reducer='sum'
+                cross_reducer="mean"
             )
 
-            graph.apply_nodes(
-                func=lambda nodes: {
-                    'h': getattr(self, 'd_down_%s' % (idx-1))(
+        graph.multi_update_all(
+            {
+                "n2_has_%s_n1" % pos_idx: (
+                    dgl.function.copy_src("h", "m"),
+                    dgl.function.sum("m", "h_down"),
+                )
+                for pos_idx in range(1)
+            },
+            cross_reducer="sum"
+        )
+
+        for field in ['h', 'h2', 'h_down']:
+            print(graph.nodes['n1'].data[field].shape)
+
+        graph.apply_nodes(
+            func=lambda nodes: {
+                'h': self.final_linear(
                         torch.cat(
                             [
                                 nodes.data['h'],
-                                nodes.data['h_down']
+                                nodes.data['h2'],
+                                nodes.data['h_down'],
                             ],
                             dim=-1,
-                        )
-                    )
-                },
-                ntype='n%s' % (idx-1),
-            )
+                        ),
+                ),
+            },
+            ntype='n1',
+        )
 
         return graph
 
